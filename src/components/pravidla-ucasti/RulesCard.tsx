@@ -7,7 +7,8 @@ import {
 import ReactMarkdown from 'react-markdown';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { type PravidlaUcasti, getImageUrl } from "@/lib/directus";
+import { getImageUrl } from "@/lib/directus";
+import { PravidlaUcasti } from "@/lib/models/PravidlaUcasti";
 
 interface RulesCardProps {
   rules: PravidlaUcasti;
@@ -62,19 +63,19 @@ export function RulesCard({ rules, value }: RulesCardProps) {
             <div className="prose dark:prose-invert max-w-none">
               <ReactMarkdown
                 components={{
-                  a: ({ node, ...props }) => (
+                  a: (props) => (
                     <a {...props} className="text-primary hover:text-primary/80 transition-colors" target="_blank" rel="noopener noreferrer" />
                   ),
-                  ul: ({ node, ...props }) => (
+                  ul: (props) => (
                     <ul {...props} className="list-disc pl-6 space-y-2" />
                   ),
-                  ol: ({ node, ...props }) => (
+                  ol: (props) => (
                     <ol {...props} className="list-decimal pl-6 space-y-2" />
                   ),
-                  li: ({ node, ...props }) => (
+                  li: (props) => (
                     <li {...props} className="marker:text-primary" />
                   ),
-                  p: ({ node, ...props }) => (
+                  p: (props) => (
                     <p {...props} className="mb-4 last:mb-0" />
                   ),
                 }}

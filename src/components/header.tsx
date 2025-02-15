@@ -3,13 +3,8 @@
 import Link from "next/link"
 import { ModeToggle } from "./mode-toggle"
 import { Button } from "@/components/ui/button"
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
 
 interface UserProfile {
@@ -26,7 +21,7 @@ export function Header() {
   useEffect(() => {
     async function checkUser() {
       try {
-        const res = await fetch("/api/auth/profile")
+        const res = await fetch("/auth/profile")
         if (res.ok) {
           const userData = await res.json()
           setUser(userData)
@@ -40,50 +35,71 @@ export function Header() {
     checkUser()
   }, [])
 
+  const NavItems = () => (
+    <>
+      <Link href="/" className="font-bold text-foreground hover:text-foreground/80">
+        Home
+      </Link>
+      <Link href="/blog" className="text-foreground hover:text-foreground/80">
+        Blog
+      </Link>
+    </>
+  )
+
+  const AuthButtons = () => (
+    <>
+      {!loading && (
+        <>
+          {user ? (
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/profile">Profile</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <a href="/auth/logout">Sign out</a>
+              </Button>
+            </>
+          ) : (
+            <Button asChild>
+              <a href="/auth/login">Sign in</a>
+            </Button>
+          )}
+        </>
+      )}
+    </>
+  )
+
   return (
     <header className="w-full border-b">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link href="/" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  <span className="font-bold">Home</span>
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/blog" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Blog
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            {user && (
-              <NavigationMenuItem>
-                <Link href="/profile" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Profile
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-            )}
-          </NavigationMenuList>
-        </NavigationMenu>
+      <div className="flex h-16 items-center justify-between px-4 max-w-5xl mx-auto">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex gap-6">
+          <NavItems />
+        </nav>
+
+        {/* Mobile Navigation */}
+        <Sheet>
+          <SheetTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon" aria-label="Open menu">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[240px] sm:w-[300px]">
+            <SheetHeader>
+              <SheetTitle>Navigation Menu</SheetTitle>
+            </SheetHeader>
+            <nav className="flex flex-col gap-4 mt-4" aria-label="Mobile navigation">
+              <NavItems />
+              <AuthButtons />
+            </nav>
+          </SheetContent>
+        </Sheet>
+
+        {/* Right side buttons */}
         <div className="flex items-center gap-4">
-          {!loading && (
-            <>
-              {user ? (
-                <Button variant="ghost" asChild>
-                  <a href="/api/auth/logout">Logout</a>
-                </Button>
-              ) : (
-                <Button asChild>
-                  <a href="/api/auth/login">Login with Auth0</a>
-                </Button>
-              )}
-            </>
-          )}
+          <div className="hidden md:flex items-center gap-4">
+            <AuthButtons />
+          </div>
           <ModeToggle />
         </div>
       </div>

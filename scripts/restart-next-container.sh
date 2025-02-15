@@ -17,8 +17,8 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Get the container name (assuming it ends with -web-1 as per docker-compose naming)
-CONTAINER_NAME=$(docker ps -a --filter "name=-web-1" --format "{{.Names}}")
+# Get the container name (matching zizcon-v2_web_1 pattern)
+CONTAINER_NAME=$(docker ps -a --filter "name=zizcon-v2_web_1" --format "{{.Names}}")
 
 if [ -z "$CONTAINER_NAME" ]; then
     print_error "Next.js container not found"

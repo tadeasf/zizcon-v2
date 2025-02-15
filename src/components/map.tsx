@@ -53,7 +53,7 @@ export function Map() {
       <Marker position={OFFICE_POSITION} icon={icon}>
         <Popup>
           <div className="p-2">
-            <h3 className="font-medium mb-2">Zizcon Office</h3>
+            <h3 className="font-medium mb-2">ŽIŽCON</h3>
             <p className="text-sm">
               Nad Zlíchovem 255<br />
               152 00 Praha 5

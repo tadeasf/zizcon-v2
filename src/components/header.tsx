@@ -62,6 +62,11 @@ export function Header() {
           Gallery
         </Link>
       </Button>
+      <Button variant="ghost" asChild>
+        <Link href="/pravidla-ucasti">
+          Pravidla účasti
+        </Link>
+      </Button>
     </>
   )
 

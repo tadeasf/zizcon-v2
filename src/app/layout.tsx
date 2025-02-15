@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zizcon",
-  description: "Your application description",
+  title: "ŽIŽCON",
+  description: "Festival deskovek na Zizkově",
 };
 
 export default function RootLayout({

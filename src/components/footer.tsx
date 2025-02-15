@@ -19,7 +19,7 @@ export function Footer() {
             </div>
             <nav className="flex gap-6">
               <a
-                href="https://www.facebook.com/zizcon"
+                href="https://www.facebook.com/festivalzizcon/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -28,7 +28,7 @@ export function Footer() {
                 <span className="sr-only">Facebook</span>
               </a>
               <a
-                href="https://discord.gg/your-discord"
+                href="https://discord.gg/1160646990514896908"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"

@@ -82,6 +82,22 @@ export interface Gallery {
   gallery_files: GalleryFile[];
 }
 
+export interface PravidlaUcasti {
+  id: string;
+  status: 'published' | 'draft';
+  sort: number;
+  user_created: string;
+  date_created: string;
+  user_updated: string | null;
+  date_updated: string | null;
+  title: string;
+  content: string;
+  header: {
+    id: string;
+    filename_download: string;
+  } | null;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: {

@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zizcon Next.js Application
 
-## Getting Started
+This is a [Next.js](https://nextjs.org) project with [Directus](https://directus.io) as a headless CMS and [Auth0](https://auth0.com) for authentication.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 18+ or Bun 1.0+
+- Docker and Docker Compose (for Directus and containerized deployment)
+- Auth0 account with configured application
+- Git
+
+## Environment Setup
+
+1. Copy `.env.example` to `.env`:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2. Update the `.env` file with your configuration:
+
+- Generate secure keys and tokens as indicated in the comments
+- Configure Auth0 credentials
+- Set appropriate URLs for your environment
+
+## Development Options
+
+### 1. Full Local Development (Recommended for development)
+
+Run Directus in Docker and Next.js locally:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Start Directus
+docker-compose -f docker-compose.directus.yml up -d
+
+# Install dependencies
+bun install
+
+# Start Next.js development server
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Access:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js: <http://localhost:3000>
+- Directus: <http://localhost:8355>
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Docker Compose Development
+
+Run both Directus and Next.js in Docker:
+
+```bash
+docker-compose up -d
+```
+
+Access:
+
+- Next.js: <http://localhost:3300>
+- Directus: <http://localhost:8355>
+
+### 3. Production Deployment
+
+#### Option A: Separate Deployment
+
+1. Deploy Directus:
+
+    ```bash
+    docker-compose -f docker-compose.directus.yml up -d
+    ```
+
+2. Deploy Next.js to your preferred platform (Vercel, etc.)
+   - Set environment variables in your deployment platform
+   - Ensure `NEXT_PUBLIC_DIRECTUS_URL` points to your Directus instance
+
+#### Option B: Docker Compose Production
+
+Use the production configuration:
+
+```bash
+# Uncomment the web-prod service in docker-compose.yml first
+docker-compose up -d
+```
+
+## Project Structure
+
+- `/src` - Next.js application source
+  - `/app` - App router pages and API routes
+  - `/components` - React components
+  - `/lib` - Utility functions and configurations
+
+## Available Scripts
+
+```bash
+# Development
+bun run dev     # Start development server
+
+# Production
+bun run build   # Build for production
+bun run start   # Start production server
+
+# Linting
+bun run lint    # Run ESLint
+```
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Directus Documentation](https://docs.directus.io)
+- [Auth0 Documentation](https://auth0.com/docs)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- For production, ensure all environment variables are properly set
+- Configure CORS in Directus for your production domains
+- Set up proper SSL/TLS for both Directus and Next.js
+- Consider using a reverse proxy (e.g., Nginx) in production
+- Backup your Directus database and uploads regularly

@@ -14,7 +14,7 @@ services:
       DB_FILENAME: '/directus/database/data.db'
       STORAGE_LOCAL_ROOT: '/directus/uploads'
       CORS_ENABLED: 'true'
-      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL}
+      CORS_ORIGIN: '*'  # Allow all origins in development
       CORS_METHODS: 'GET,POST,PATCH,DELETE'
       CORS_ALLOWED_HEADERS: 'Content-Type,Authorization'
       CORS_EXPOSED_HEADERS: 'Content-Range'
@@ -28,8 +28,6 @@ services:
       ADMIN_ACCESS_TOKEN: ${DIRECTUS_STATIC_TOKEN}
       AUTH_PROVIDERS: ''
       AUTH_DISABLE_DEFAULT: 'false'
-    networks:
-      - app-network
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=3", "--spider", "http://localhost:8055/server/ping" ]
       interval: 30s
@@ -101,16 +99,10 @@ services:
       - DIRECTUS_STATIC_TOKEN=${DIRECTUS_STATIC_TOKEN}
       - DIRECTUS_ADMIN_EMAIL=${DIRECTUS_ADMIN_EMAIL}
       - DIRECTUS_ADMIN_PASSWORD=${DIRECTUS_ADMIN_PASSWORD}
-      # Internal URL for API routes
-      - DIRECTUS_INTERNAL_URL=http://directus:8055
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
-    networks:
-      - app-network
-    depends_on:
-      - directus
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
@@ -118,10 +110,6 @@ services:
       timeout: 10s
       retries: 3
 
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   directus_database:

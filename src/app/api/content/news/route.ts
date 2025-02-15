@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { directus } from '@/lib/directus';
 import { readItems } from '@directus/sdk';
+import type { News } from '@/lib/directus';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const news = await directus.request(
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '3');
+
+    const response = await directus.request<News[]>(
       readItems('news', {
         fields: [
           'id',
@@ -24,20 +29,35 @@ export async function GET() {
             _eq: 'published'
           }
         },
-        sort: ['-date_created']
+        sort: ['-date_updated']
       })
     );
 
-    if (!Array.isArray(news)) {
-      console.error('News API: Unexpected response format:', news);
+    if (!Array.isArray(response)) {
+      console.error('News API: Unexpected response format:', response);
       return NextResponse.json(
         { error: 'Invalid response format' },
         { status: 500 }
       );
     }
 
+    // Calculate pagination
+    const totalItems = response.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedData = response.slice(startIndex, endIndex);
+
     return NextResponse.json(
-      { news },
+      {
+        data: paginatedData,
+        meta: {
+          total: totalItems,
+          page,
+          pageSize,
+          pageCount: totalPages
+        }
+      },
       {
         headers: {
           'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL || '*',

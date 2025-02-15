@@ -1,8 +1,11 @@
 import { createDirectus, rest, authentication, readItems } from '@directus/sdk';
 
 // Use environment variables for configuration
-const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8355';
-const directusToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+
+if (!directusUrl) {
+  throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is required');
+}
 
 // Create and configure the Directus client
 export const directus = createDirectus(directusUrl)
@@ -10,8 +13,18 @@ export const directus = createDirectus(directusUrl)
   .with(authentication());
 
 // Initialize with static token if available
+const directusToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
 if (directusToken) {
   directus.setToken(directusToken);
+}
+
+// Types for Directus responses
+interface DirectusResponse<T> {
+  data: T[];
+  meta?: {
+    total_count: number;
+    filter_count: number;
+  };
 }
 
 // Types for blog posts
@@ -69,6 +82,16 @@ export interface Gallery {
   gallery_files: GalleryFile[];
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    pageCount: number;
+  };
+}
+
 // Utility function to generate image URLs with transformations
 export function getImageUrl(imageId: string | undefined, options?: {
   width?: number;
@@ -91,7 +114,7 @@ export function getImageUrl(imageId: string | undefined, options?: {
 
 export async function getBlogPosts() {
   try {
-    const posts = await directus.request(
+    const response = await directus.request<DirectusResponse<BlogPost>>(
       readItems('blog', {
         fields: [
           'id',
@@ -115,16 +138,82 @@ export async function getBlogPosts() {
       })
     );
     
-    if (!Array.isArray(posts)) {
+    if (!response?.data || !Array.isArray(response.data)) {
       return [];
     }
     
-    return posts as BlogPost[];
+    return response.data;
   } catch (error) {
     if (error instanceof Error) {
       console.error('Error fetching blog posts:', error.message);
     }
     return [];
+  }
+}
+
+export async function getNews(page: number = 1, pageSize: number = 3) {
+  try {
+    const response = await directus.request<DirectusResponse<News>>(
+      readItems('news', {
+        fields: [
+          'id',
+          'status',
+          'sort',
+          'user_created',
+          'user_updated',
+          'date_created',
+          'date_updated',
+          'title',
+          'content',
+          'header.id',
+          'header.filename_download'
+        ],
+        filter: {
+          status: {
+            _eq: 'published'
+          }
+        },
+        sort: ['-date_updated'],
+        page,
+        limit: pageSize,
+        meta: 'total_count,filter_count'
+      })
+    );
+    
+    if (!response?.data || !Array.isArray(response.data)) {
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          pageSize,
+          pageCount: 0
+        }
+      };
+    }
+    
+    return {
+      data: response.data,
+      meta: {
+        total: response.meta?.total_count ?? 0,
+        page,
+        pageSize,
+        pageCount: Math.ceil((response.meta?.total_count ?? 0) / pageSize)
+      }
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error fetching news:', error.message);
+    }
+    return {
+      data: [],
+      meta: {
+        total: 0,
+        page,
+        pageSize,
+        pageCount: 0
+      }
+    };
   }
 }
 

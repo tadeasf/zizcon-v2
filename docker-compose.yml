@@ -3,7 +3,7 @@ services:
     image: directus/directus:latest
     restart: unless-stopped
     ports:
-      - "8055:8055"
+      - "8355:8055"
     volumes:
       - ./directus/database:/directus/database
       - ./directus/uploads:/directus/uploads
@@ -45,7 +45,7 @@ services:
         - NEXT_PUBLIC_DIRECTUS_URL=${NEXT_PUBLIC_DIRECTUS_BUILD_URL}
         - NEXT_PUBLIC_DIRECTUS_TOKEN=${DIRECTUS_STATIC_TOKEN}
     ports:
-      - "3000:3000"
+      - "3300:3000"
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1

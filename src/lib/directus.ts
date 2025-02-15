@@ -1,6 +1,6 @@
 import { createDirectus, rest, readItems, authentication } from '@directus/sdk';
 
-const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055';
+const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8355';
 const directusToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
 
 const directus = createDirectus(directusUrl)

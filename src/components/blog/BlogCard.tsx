@@ -4,7 +4,8 @@ import { format } from "date-fns";
 import ReactMarkdown from 'react-markdown';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { type BlogPost, getImageUrl } from "@/lib/directus";
+import { getImageUrl } from "@/lib/directus";
+import { BlogPost } from "@/lib/models/BlogPost";
 
 interface BlogCardProps {
   post: BlogPost;

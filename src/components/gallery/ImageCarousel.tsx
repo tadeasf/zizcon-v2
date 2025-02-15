@@ -10,7 +10,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { type Gallery, getImageUrl } from "@/lib/directus";
+import { getImageUrl } from "@/lib/directus";
+import { Gallery } from "@/lib/models/Gallery";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 

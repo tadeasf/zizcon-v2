@@ -1,29 +1,64 @@
-import { getBlogPosts, type BlogPost, getImageUrl } from "@/lib/directus";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { type BlogPost } from "@/lib/directus";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { format } from "date-fns";
-import ReactMarkdown from 'react-markdown';
-import Image from "next/image";
+import { Accordion } from "@/components/ui/accordion";
+import { BlogCard } from "@/components/blog/BlogCard";
+
+async function getBlogPosts(): Promise<BlogPost[]> {
+  try {
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3300';
+    const response = await fetch(`${baseUrl}/api/content/blog`, {
+      next: { revalidate: 60 }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.posts;
+  } catch (error) {
+    console.error('Error fetching from API:', error);
+    throw error;
+  }
+}
 
 export default async function BlogPage() {
-  const posts = await getBlogPosts();
+  let posts: BlogPost[] = [];
+  let error: Error | null = null;
+  
+  try {
+    posts = await getBlogPosts();
+  } catch (e) {
+    error = e instanceof Error ? e : new Error('Unknown error occurred');
+  }
+
+  if (error) {
+    return (
+      <div className="container max-w-4xl mx-auto py-6">
+        <h1 className="text-3xl font-bold mb-6">Blog</h1>
+        <Card className="p-6 border-red-200 bg-red-50 dark:bg-red-950/20">
+          <CardTitle className="text-red-600 dark:text-red-400">Error Loading Blog Posts</CardTitle>
+          <CardDescription className="text-red-600/80 dark:text-red-400/80">{error.message}</CardDescription>
+        </Card>
+      </div>
+    );
+  }
 
   if (!posts.length) {
     return (
-      <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold">Blog</h1>
+      <div className="container max-w-4xl mx-auto py-6">
+        <h1 className="text-3xl font-bold mb-6">Blog</h1>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-4 w-[250px]" />
+            <Card key={i} className="overflow-hidden">
+              <div className="relative h-[300px] w-full">
+                <Skeleton className="h-full w-full absolute" />
+              </div>
+              <div className="p-6">
+                <Skeleton className="h-4 w-[250px] mb-2" />
                 <Skeleton className="h-4 w-[200px]" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-48 w-full mb-4" />
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
+              </div>
             </Card>
           ))}
         </div>
@@ -32,41 +67,11 @@ export default async function BlogPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold">Blog</h1>
+    <div className="container max-w-4xl mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">Blog</h1>
       <Accordion type="single" collapsible className="w-full">
-        {posts.map((post: BlogPost) => (
-          <AccordionItem key={post.id} value={post.id}>
-            <Card className="mb-4">
-              <CardHeader>
-                <AccordionTrigger>
-                  <div className="flex flex-col items-start">
-                    <CardTitle>{post.title}</CardTitle>
-                    <CardDescription>
-                      {format(new Date(post.date_created), "MMMM dd, yyyy")}
-                    </CardDescription>
-                  </div>
-                </AccordionTrigger>
-              </CardHeader>
-              <AccordionContent>
-                <CardContent>
-                  {post.header && (
-                    <div className="relative w-full h-[300px] mb-6">
-                      <Image
-                        src={getImageUrl(post.header.id)}
-                        alt={post.header.filename_download}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                  <div className="prose dark:prose-invert max-w-none">
-                    <ReactMarkdown>{post.content}</ReactMarkdown>
-                  </div>
-                </CardContent>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
+        {posts.map((post) => (
+          <BlogCard key={post.id} post={post} />
         ))}
       </Accordion>
     </div>

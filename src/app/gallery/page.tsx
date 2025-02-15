@@ -1,4 +1,4 @@
-import { type Gallery } from "@/lib/directus";
+import { Gallery } from "@/lib/models/Gallery";
 import { Card, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageCarousel } from "@/components/gallery/ImageCarousel";

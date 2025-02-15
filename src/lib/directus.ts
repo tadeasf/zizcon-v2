@@ -1,4 +1,7 @@
 import { createDirectus, rest, authentication, readItems } from '@directus/sdk';
+import { DirectusResponse } from './models/DirectusResponse';
+import { BlogPost } from './models/BlogPost';
+import { News } from './models/News';
 
 // Use environment variables for configuration
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -16,96 +19,6 @@ export const directus = createDirectus(directusUrl)
 const directusToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
 if (directusToken) {
   directus.setToken(directusToken);
-}
-
-// Types for Directus responses
-interface DirectusResponse<T> {
-  data: T[];
-  meta?: {
-    total_count: number;
-    filter_count: number;
-  };
-}
-
-// Types for blog posts
-export interface BlogPost {
-  id: string;
-  status: 'published' | 'draft';
-  sort: number;
-  user_created: string;
-  user_updated: string;
-  date_created: string;
-  date_updated: string;
-  title: string;
-  content: string;
-  header: {
-    id: string;
-    filename_download: string;
-  } | null;
-}
-
-export interface News {
-  id: string;
-  status: 'published' | 'draft';
-  sort: number;
-  user_created: string;
-  user_updated: string;
-  date_created: string;
-  date_updated: string;
-  title: string;
-  content: string;
-  header: {
-    id: string;
-    filename_download: string;
-  } | null;
-}
-
-export interface GalleryFile {
-  id: string;
-  gallery_id: string;
-  directus_files_id: {
-    id: string;
-    filename_download: string;
-  };
-}
-
-export interface Gallery {
-  id: string;
-  status: 'published' | 'draft';
-  sort: number;
-  date_updated: string;
-  title: string;
-  header: {
-    id: string;
-    filename_download: string;
-  } | null;
-  gallery_files: GalleryFile[];
-}
-
-export interface PravidlaUcasti {
-  id: string;
-  status: 'published' | 'draft';
-  sort: number;
-  user_created: string;
-  date_created: string;
-  user_updated: string | null;
-  date_updated: string | null;
-  title: string;
-  content: string;
-  header: {
-    id: string;
-    filename_download: string;
-  } | null;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    pageSize: number;
-    pageCount: number;
-  };
 }
 
 // Utility function to generate image URLs with transformations

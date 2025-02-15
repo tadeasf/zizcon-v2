@@ -4,8 +4,8 @@ import { format } from "date-fns";
 import ReactMarkdown from 'react-markdown';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { type News, getImageUrl } from "@/lib/directus";
-
+import { getImageUrl } from "@/lib/directus";
+import { News } from "@/lib/models/News";
 interface NewsCardProps {
   news: News;
 }

@@ -5,7 +5,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { NewsCard } from "@/components/news/NewsCard";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { type News } from "@/lib/directus";
+import { News } from "@/lib/models/News";
 
 export function NewsFeed() {
   const [news, setNews] = useState<News[]>([]);

@@ -1,4 +1,4 @@
-import { type BlogPost } from "@/lib/directus";
+import { BlogPost } from "@/lib/models/BlogPost";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion } from "@/components/ui/accordion";

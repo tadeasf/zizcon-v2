@@ -1,4 +1,4 @@
-import { type PravidlaUcasti } from "@/lib/directus";
+import { PravidlaUcasti } from "@/lib/models/PravidlaUcasti";
 import { Card, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RulesCard } from "@/components/pravidla-ucasti/RulesCard";

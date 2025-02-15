@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { directus } from '@/lib/directus';
 import { readItems } from '@directus/sdk';
-import type { News } from '@/lib/directus';
+import type { News } from '@/lib/models/News';
 
 export async function GET(request: NextRequest) {
   try {

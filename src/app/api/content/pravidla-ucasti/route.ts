@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { directus } from '@/lib/directus';
 import { readItems } from '@directus/sdk';
-import type { PravidlaUcasti } from '@/lib/directus';
 
 export async function GET() {
   try {

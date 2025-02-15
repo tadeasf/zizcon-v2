@@ -41,9 +41,12 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "contentful": "^11.4.6",
+    "contentful-management": "^11.47.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.5.2",
     "input-otp": "^1.4.2",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.475.0",
     "next": "15.1.7",
     "next-themes": "^0.4.4",
@@ -51,6 +54,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
+    "react-leaflet": "^5.0.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.1",
     "sonner": "^1.7.4",
@@ -61,13 +65,16 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/leaflet": "^1.9.16",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

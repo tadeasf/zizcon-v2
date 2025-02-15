@@ -5,8 +5,8 @@ export function Hero() {
     <div className="flex items-center justify-center w-full max-w-5xl mx-auto px-4 py-4">
       <div className="relative w-full max-w-[80vw] md:max-w-[60vw] h-[120px] md:h-[180px]">
         <Image
-          src="/logo.png"
-          alt="Zizcon Logo"
+          src="/logo_large.png"
+          alt="Zizcon Logo Large"
           fill
           className="object-contain"
           priority

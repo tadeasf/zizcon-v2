@@ -1,8 +1,49 @@
 services:
+  directus:
+    image: directus/directus:latest
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    volumes:
+      - ./directus/database:/directus/database
+      - ./directus/uploads:/directus/uploads
+    env_file:
+      - .env
+    environment:
+      DB_CLIENT: 'sqlite3'
+      DB_FILENAME: '/directus/database/data.db'
+      STORAGE_LOCAL_ROOT: '/directus/uploads'
+      CORS_ENABLED: 'true'
+      CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL}
+      CORS_METHODS: 'GET,POST,PATCH,DELETE'
+      CORS_ALLOWED_HEADERS: 'Content-Type,Authorization'
+      CORS_EXPOSED_HEADERS: 'Content-Range'
+      CORS_CREDENTIALS: 'true'
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      KEY: ${KEY}
+      SECRET: ${SECRET}
+      STATIC_TOKEN: ${DIRECTUS_STATIC_TOKEN}
+      PUBLIC_URL: ${NEXT_PUBLIC_DIRECTUS_URL}
+      ADMIN_ACCESS_TOKEN: ${DIRECTUS_STATIC_TOKEN}
+      AUTH_PROVIDERS: ''
+      AUTH_DISABLE_DEFAULT: 'false'
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=3", "--spider", "http://localhost:8055/server/ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   web:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_DIRECTUS_URL=${NEXT_PUBLIC_DIRECTUS_BUILD_URL}
+        - NEXT_PUBLIC_DIRECTUS_TOKEN=${DIRECTUS_STATIC_TOKEN}
     ports:
       - "3000:3000"
     environment:
@@ -14,13 +55,31 @@ services:
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
       - AUTH0_SCOPE=${AUTH0_SCOPE}
       - APP_BASE_URL=${APP_BASE_URL}
+      - NEXT_PUBLIC_DIRECTUS_URL=http://directus:8055
+      - DIRECTUS_STATIC_TOKEN=${DIRECTUS_STATIC_TOKEN}
+      - DIRECTUS_ADMIN_EMAIL=${DIRECTUS_ADMIN_EMAIL}
+      - DIRECTUS_ADMIN_PASSWORD=${DIRECTUS_ADMIN_PASSWORD}
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
+    networks:
+      - app-network
+    depends_on:
+      - directus
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  directus_database:
+    name: directus_database
+  directus_uploads:
+    name: directus_uploads

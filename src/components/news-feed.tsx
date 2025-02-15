@@ -61,7 +61,6 @@ export function NewsFeed() {
     return (
       <section id="news-section" className="container mx-auto px-4">
         <div className="max-w-[80%] mx-auto">
-          <h2 className="text-3xl font-bold mb-8">Latest News</h2>
           <div className="animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-muted h-48 rounded-lg" />
@@ -76,7 +75,6 @@ export function NewsFeed() {
     return (
       <section id="news-section" className="container mx-auto px-4">
         <div className="max-w-[80%] mx-auto">
-          <h2 className="text-3xl font-bold mb-8">Latest News</h2>
           <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-950/20 rounded-lg">
             <p className="text-red-600 dark:text-red-400">{error}</p>
           </div>
@@ -88,8 +86,6 @@ export function NewsFeed() {
   return (
     <section id="news-section" className="container mx-auto px-4">
       <div className="max-w-[80%] mx-auto space-y-8">
-        <h2 className="text-3xl font-bold">Latest News</h2>
-
         {currentPage > 1 && (
           <div className="flex justify-center">
             <Button

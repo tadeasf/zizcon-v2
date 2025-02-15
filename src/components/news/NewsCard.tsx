@@ -1,11 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, isAfter, subWeeks } from "date-fns";
 import ReactMarkdown from 'react-markdown';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getImageUrl } from "@/lib/directus";
 import { News } from "@/lib/models/News";
+
 interface NewsCardProps {
   news: News;
 }
@@ -19,6 +20,17 @@ export function NewsCard({ news }: NewsCardProps) {
       quality: 80
     }) : 
     null;
+
+  const formatNewsDate = (date: string) => {
+    const newsDate = new Date(date);
+    const oneWeekAgo = subWeeks(new Date(), 1);
+    
+    if (isAfter(newsDate, oneWeekAgo)) {
+      return formatDistanceToNow(newsDate, { addSuffix: true });
+    }
+    
+    return format(newsDate, "MMMM dd, yyyy");
+  };
 
   return (
     <AccordionItem value={news.id}>
@@ -56,7 +68,7 @@ export function NewsCard({ news }: NewsCardProps) {
                   "text-sm font-medium",
                   imageUrl ? "text-gray-100 drop-shadow-lg" : "text-muted-foreground"
                 )}>
-                  {format(new Date(news.date_created), "MMMM dd, yyyy")}
+                  {formatNewsDate(news.date_created)}
                 </CardDescription>
               </div>
             </AccordionTrigger>

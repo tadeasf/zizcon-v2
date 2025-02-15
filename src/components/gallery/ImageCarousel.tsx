@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -6,17 +8,22 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { type Gallery, getImageUrl } from "@/lib/directus";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ImageCarouselProps {
   gallery: Gallery;
 }
 
 export function ImageCarousel({ gallery }: ImageCarouselProps) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
   const galleryFiles = gallery.gallery_files || [];
   const headerImage = gallery.header;
-
 
   // Combine header image with other images if it exists
   const allImages = [
@@ -24,6 +31,15 @@ export function ImageCarousel({ gallery }: ImageCarouselProps) {
     ...galleryFiles.map(gf => gf.directus_files_id)
   ].filter(Boolean);
 
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   if (allImages.length === 0) {
     return null;
@@ -36,8 +52,8 @@ export function ImageCarousel({ gallery }: ImageCarouselProps) {
           <CardTitle>{gallery.title}</CardTitle>
         </CardHeader>
       )}
-      <CardContent className="p-1">
-        <Carousel className="w-full">
+      <CardContent className="p-1 space-y-4">
+        <Carousel className="w-full" setApi={setApi}>
           <CarouselContent>
             {allImages.map((image, index) => {
               const imageUrl = getImageUrl(image.id, {
@@ -74,6 +90,43 @@ export function ImageCarousel({ gallery }: ImageCarouselProps) {
             </>
           )}
         </Carousel>
+
+        {/* Thumbnails */}
+        {allImages.length > 1 && (
+          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 px-2">
+            {allImages.map((image, index) => {
+              const thumbnailUrl = getImageUrl(image.id, {
+                width: 120,
+                height: 80,
+                fit: 'cover',
+                quality: 60
+              });
+
+              if (!thumbnailUrl) {
+                return null;
+              }
+
+              return (
+                <button
+                  key={image.id}
+                  onClick={() => api?.scrollTo(index)}
+                  className={cn(
+                    "relative aspect-[3/2] w-full overflow-hidden rounded-md transition-opacity",
+                    current === index ? "opacity-100 ring-2 ring-primary" : "opacity-50 hover:opacity-75"
+                  )}
+                >
+                  <Image
+                    src={thumbnailUrl}
+                    alt={`Thumbnail ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 16vw, (max-width: 1200px) 12vw, 10vw"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

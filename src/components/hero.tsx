@@ -6,7 +6,7 @@ export function Hero() {
       <div className="relative w-full max-w-[80vw] md:max-w-[60vw] h-[120px] md:h-[180px]">
         <Image
           src="/logo_large.png"
-          alt="Zizcon Logo Large"
+          alt="ŽIŽCON Logo Large"
           fill
           className="object-contain"
           priority

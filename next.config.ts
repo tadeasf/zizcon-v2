@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.gravatar.com",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+      {
+        protocol: "https", 
+        hostname: "dev.directus.zizcon.cz",
+      },
+      {
+        protocol: "https",
+        hostname: "dev.next.zizcon.cz",
+      }
     ],
   },
 };

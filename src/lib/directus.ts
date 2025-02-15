@@ -4,11 +4,6 @@ import { createDirectus, rest, authentication, readItems } from '@directus/sdk';
 const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8355';
 const directusToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
 
-console.log('Directus Configuration:', {
-  url: directusUrl,
-  hasToken: !!directusToken
-});
-
 // Create and configure the Directus client
 export const directus = createDirectus(directusUrl)
   .with(rest())
@@ -17,7 +12,6 @@ export const directus = createDirectus(directusUrl)
 // Initialize with static token if available
 if (directusToken) {
   directus.setToken(directusToken);
-  console.log('Directus token set successfully');
 }
 
 // Types for blog posts
@@ -37,19 +31,42 @@ export interface BlogPost {
   } | null;
 }
 
+export interface News {
+  id: string;
+  status: 'published' | 'draft';
+  sort: number;
+  user_created: string;
+  user_updated: string;
+  date_created: string;
+  date_updated: string;
+  title: string;
+  content: string;
+  header: {
+    id: string;
+    filename_download: string;
+  } | null;
+}
+
+export interface GalleryFile {
+  id: string;
+  gallery_id: string;
+  directus_files_id: {
+    id: string;
+    filename_download: string;
+  };
+}
+
 export interface Gallery {
   id: string;
   status: 'published' | 'draft';
   sort: number;
   date_updated: string;
+  title: string;
   header: {
     id: string;
     filename_download: string;
   } | null;
-  images: {
-    id: string;
-    filename_download: string;
-  }[];
+  gallery_files: GalleryFile[];
 }
 
 // Utility function to generate image URLs with transformations
@@ -73,7 +90,6 @@ export function getImageUrl(imageId: string | undefined, options?: {
 }
 
 export async function getBlogPosts() {
-  console.log('Fetching blog posts...');
   try {
     const posts = await directus.request(
       readItems('blog', {
@@ -99,21 +115,14 @@ export async function getBlogPosts() {
       })
     );
     
-    console.log('Raw posts response:', JSON.stringify(posts, null, 2));
-    
     if (!Array.isArray(posts)) {
-      console.error('Unexpected response format:', posts);
       return [];
     }
     
     return posts as BlogPost[];
   } catch (error) {
-    console.error('Error fetching blog posts:', error);
     if (error instanceof Error) {
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
+      console.error('Error fetching blog posts:', error.message);
     }
     return [];
   }

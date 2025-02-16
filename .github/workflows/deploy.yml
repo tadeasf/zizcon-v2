@@ -94,7 +94,7 @@ jobs:
             git pull origin main 2>&1 | tee deployment_logs/git_pull.log
             
             # Capture existing containers logs before shutdown
-            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/pre_deploy_containers.log 2>&1
+            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/pre_deploy_containers.log 2>&1 || true
             
             # Rebuild and restart containers with logging
             docker-compose -f docker-compose.prod.yml down 2>&1 | tee deployment_logs/docker_compose_down.log
@@ -102,7 +102,7 @@ jobs:
             
             # Capture new containers logs
             sleep 30  # Wait for containers to initialize
-            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/post_deploy_containers.log 2>&1
+            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/post_deploy_containers.log 2>&1 || true
             
             # Create deployment summary
             echo "Deployment completed at $(date)" > deployment_logs/deployment_summary.log
@@ -111,8 +111,12 @@ jobs:
             echo "Docker Containers Status:" >> deployment_logs/deployment_summary.log
             docker-compose -f docker-compose.prod.yml ps >> deployment_logs/deployment_summary.log
             
-            # Archive logs
-            tar -czf deployment_logs.tar.gz deployment_logs/
+            # Archive logs with absolute path
+            cd /root/zizcon-v2
+            tar -czf /root/zizcon-v2/deployment_logs.tar.gz deployment_logs/
+            
+            # Verify the archive was created
+            ls -la /root/zizcon-v2/deployment_logs.tar.gz
             
             # Clean up
             rm -rf deployment_logs
@@ -127,8 +131,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "/root/zizcon-v2/deployment_logs.tar.gz"
-          target: "deployment_logs"
-          strip_components: 2
+          target: "/tmp"
+          strip_components: 0
+
+      - name: Move logs to workspace
+        if: always()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            if [ -f "/tmp/deployment_logs.tar.gz" ]; then
+              cp /tmp/deployment_logs.tar.gz /root/zizcon-v2/
+              rm /tmp/deployment_logs.tar.gz
+            fi
 
       - name: Upload logs as artifact
         if: always()
@@ -157,35 +175,41 @@ jobs:
           # Optional fields
           reply_to: zizcon@tadeasfort.com
           convert_markdown: true
-          
-          # Email Body
-          body: |
-            # Deployment Status Report
+          html_body: |
+            <h1>Deployment Status Report</h1>
             
-            ## Overview
-            - **Status**: ${{ job.status }}
-            - **Branch**: ${{ github.ref_name }}
-            - **Commit**: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-            - **Triggered by**: ${{ github.actor }}
+            <h2>Overview</h2>
+            <ul>
+              <li><strong>Status</strong>: ${{ job.status }}</li>
+              <li><strong>Branch</strong>: ${{ github.ref_name }}</li>
+              <li><strong>Commit</strong>: <a href="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}">${{ github.sha }}</a></li>
+              <li><strong>Triggered by</strong>: ${{ github.actor }}</li>
+            </ul>
             
-            ## Details
-            - **Repository**: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
-            - **Workflow**: [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            <h2>Details</h2>
+            <ul>
+              <li><strong>Repository</strong>: <a href="${{ github.server_url }}/${{ github.repository }}">${{ github.repository }}</a></li>
+              <li><strong>Workflow</strong>: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.workflow }}</a></li>
+            </ul>
             
-            ## Logs
-            Detailed deployment logs are attached to this email. The logs include:
-            - Git pull operations
-            - Pre-deployment container state
-            - Docker compose operations
-            - Post-deployment container state
-            - Deployment summary
+            <h2>Logs</h2>
+            <p>Detailed deployment logs are attached to this email. The logs include:</p>
+            <ul>
+              <li>Git pull operations</li>
+              <li>Pre-deployment container state</li>
+              <li>Docker compose operations</li>
+              <li>Post-deployment container state</li>
+              <li>Deployment summary</li>
+            </ul>
             
-            ## Links
-            - [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            - [View Commit Details](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            <h2>Links</h2>
+            <ul>
+              <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Workflow Run</a></li>
+              <li><a href="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}">View Commit Details</a></li>
+            </ul>
             
-            ---
-            *This is an automated message from GitHub Actions*
+            <hr>
+            <em>This is an automated message from GitHub Actions</em>
           
           # Attachments
           attachments: ./deployment_logs.tar.gz
@@ -193,4 +217,3 @@ jobs:
           # Optional settings
           priority: ${{ job.status == 'success' && 'normal' || 'high' }}
           ignore_cert: true
-          nodemailerlog: true

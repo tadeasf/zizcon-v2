@@ -113,10 +113,11 @@ jobs:
             
             # Archive logs with absolute path
             cd /root/zizcon-v2
-            tar -czf /root/zizcon-v2/deployment_logs.tar.gz deployment_logs/
+            tar -czf deployment_logs.tar.gz deployment_logs/
             
-            # Verify the archive was created
-            ls -la /root/zizcon-v2/deployment_logs.tar.gz
+            # Verify the archive was created and show its location
+            ls -la deployment_logs.tar.gz
+            pwd
             
             # Clean up
             rm -rf deployment_logs
@@ -131,23 +132,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "/root/zizcon-v2/deployment_logs.tar.gz"
-          target: "/tmp"
+          target: "."
           strip_components: 0
+          overwrite: true
 
-      - name: Move logs to workspace
+      - name: List workspace contents
         if: always()
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            if [ -f "/tmp/deployment_logs.tar.gz" ]; then
-              cp /tmp/deployment_logs.tar.gz /root/zizcon-v2/
-              rm /tmp/deployment_logs.tar.gz
-            fi
-
+        run: |
+          pwd
+          ls -la
+          
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -212,7 +206,7 @@ jobs:
             <em>This is an automated message from GitHub Actions</em>
           
           # Attachments
-          attachments: ./deployment_logs.tar.gz
+          attachments: deployment_logs.tar.gz
           
           # Optional settings
           priority: ${{ job.status == 'success' && 'normal' || 'high' }}

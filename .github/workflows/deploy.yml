@@ -115,40 +115,16 @@ jobs:
             cd /root/zizcon-v2
             tar -czf deployment_logs.tar.gz deployment_logs/
             
-            # Verify the archive was created and show its location
-            ls -la deployment_logs.tar.gz
-            pwd
+            # Upload to x0.at and save URL
+            echo "Uploading logs to x0.at..."
+            UPLOAD_URL=$(curl -F "file=@deployment_logs.tar.gz" https://x0.at/)
+            echo "Logs uploaded successfully. URL: $UPLOAD_URL"
+            echo "UPLOAD_URL=$UPLOAD_URL" >> $GITHUB_ENV
             
             # Clean up
             rm -rf deployment_logs
+            rm -f deployment_logs.tar.gz
             rm .env
-
-      - name: Download deployment logs
-        if: always()
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "/root/zizcon-v2/deployment_logs.tar.gz"
-          target: "."
-          strip_components: 0
-          overwrite: true
-
-      - name: List workspace contents
-        if: always()
-        run: |
-          pwd
-          ls -la
-          
-      - name: Upload logs as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-logs
-          path: deployment_logs.tar.gz
-          retention-days: 5
 
       - name: Send deployment notification
         if: always()
@@ -164,10 +140,10 @@ jobs:
           # Required fields
           subject: "[${{ job.status }}] Zizcon V2 Deployment - ${{ github.ref_name }}"
           to: ${{ secrets.NOTIFICATION_EMAILS }}
-          from: "Zizcon V2 Deployment <zizcon@tadeasfort.com>"
+          from: "Zizcon V2 Deployment <noreply@tadeasfort.com>"
           
           # Optional fields
-          reply_to: zizcon@tadeasfort.com
+          reply_to: noreply@tadeasfort.com
           convert_markdown: true
           html_body: |
             <h1>Deployment Status Report</h1>
@@ -187,7 +163,9 @@ jobs:
             </ul>
             
             <h2>Logs</h2>
-            <p>Detailed deployment logs are attached to this email. The logs include:</p>
+            <p>Deployment logs are available for download at: <a href="${{ env.UPLOAD_URL }}">${{ env.UPLOAD_URL }}</a></p>
+            <p>Note: Logs will be available for at least 3 days, depending on file size.</p>
+            <p>The logs include:</p>
             <ul>
               <li>Git pull operations</li>
               <li>Pre-deployment container state</li>
@@ -204,9 +182,6 @@ jobs:
             
             <hr>
             <em>This is an automated message from GitHub Actions</em>
-          
-          # Attachments
-          attachments: deployment_logs.tar.gz
           
           # Optional settings
           priority: ${{ job.status == 'success' && 'normal' || 'high' }}

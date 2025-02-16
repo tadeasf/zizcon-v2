@@ -25,6 +25,27 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: 'https://dev-zhcom0xk8ta0ma1c.us.auth0.com',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

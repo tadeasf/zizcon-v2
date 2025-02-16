@@ -10,6 +10,22 @@ if (!directusUrl) {
   throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is required');
 }
 
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 5000; // 5 seconds
+
+async function retryWithDelay<T>(fn: () => Promise<T>, retries: number = MAX_RETRIES): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Retrying Directus request, ${retries} attempts remaining`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return retryWithDelay(fn, retries - 1);
+    }
+    throw error;
+  }
+}
+
 // Create and configure the Directus client
 export const directus = createDirectus(directusUrl)
   .with(rest())
@@ -43,31 +59,34 @@ export function getImageUrl(imageId: string | undefined, options?: {
 
 export async function getBlogPosts() {
   try {
-    const response = await directus.request<DirectusResponse<BlogPost>>(
-      readItems('blog', {
-        fields: [
-          'id',
-          'status',
-          'sort',
-          'user_created',
-          'user_updated',
-          'date_created',
-          'date_updated',
-          'title',
-          'content',
-          'header.id',
-          'header.filename_download'
-        ],
-        filter: {
-          status: {
-            _eq: 'published'
-          }
-        },
-        sort: ['-date_created']
-      })
+    const response = await retryWithDelay(() => 
+      directus.request<DirectusResponse<BlogPost>>(
+        readItems('blog', {
+          fields: [
+            'id',
+            'status',
+            'sort',
+            'user_created',
+            'user_updated',
+            'date_created',
+            'date_updated',
+            'title',
+            'content',
+            'header.id',
+            'header.filename_download'
+          ],
+          filter: {
+            status: {
+              _eq: 'published'
+            }
+          },
+          sort: ['-date_created']
+        })
+      )
     );
     
     if (!response?.data || !Array.isArray(response.data)) {
+      console.warn('No blog posts found or invalid response format');
       return [];
     }
     
@@ -82,34 +101,37 @@ export async function getBlogPosts() {
 
 export async function getNews(page: number = 1, pageSize: number = 3) {
   try {
-    const response = await directus.request<DirectusResponse<News>>(
-      readItems('news', {
-        fields: [
-          'id',
-          'status',
-          'sort',
-          'user_created',
-          'user_updated',
-          'date_created',
-          'date_updated',
-          'title',
-          'content',
-          'header.id',
-          'header.filename_download'
-        ],
-        filter: {
-          status: {
-            _eq: 'published'
-          }
-        },
-        sort: ['-date_updated'],
-        page,
-        limit: pageSize,
-        meta: 'total_count,filter_count'
-      })
+    const response = await retryWithDelay(() =>
+      directus.request<DirectusResponse<News>>(
+        readItems('news', {
+          fields: [
+            'id',
+            'status',
+            'sort',
+            'user_created',
+            'user_updated',
+            'date_created',
+            'date_updated',
+            'title',
+            'content',
+            'header.id',
+            'header.filename_download'
+          ],
+          filter: {
+            status: {
+              _eq: 'published'
+            }
+          },
+          sort: ['-date_updated'],
+          page,
+          limit: pageSize,
+          meta: 'total_count,filter_count'
+        })
+      )
     );
     
     if (!response?.data || !Array.isArray(response.data)) {
+      console.warn('No news found or invalid response format');
       return {
         data: [],
         meta: {
@@ -131,9 +153,7 @@ export async function getNews(page: number = 1, pageSize: number = 3) {
       }
     };
   } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error fetching news:', error.message);
-    }
+    console.error('Error fetching news:', error);
     return {
       data: [],
       meta: {

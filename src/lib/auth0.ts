@@ -19,30 +19,39 @@
  *    - Maintains the link between Auth0 and Directus users
  */
 
-import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import { Auth0Client } from '@auth0/nextjs-auth0/server';
+import { useConfigStore } from '@/stores/configStore';
 import { directus } from './directus';
 import { createUser, readUsers } from '@directus/sdk';
 import type { SessionData as Session } from '@auth0/nextjs-auth0/types';
 
-export const auth0 = new Auth0Client({
-  domain: process.env.AUTH0_DOMAIN!,
-  clientId: process.env.AUTH0_CLIENT_ID!,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET!,
-  appBaseUrl: process.env.AUTH0_BASE_URL,
-  routes: {
-    callback: "/auth/callback",
-    login: "/auth/login",
-    logout: "/auth/logout",
-  },
-  authorizationParameters: {
-    response_type: "code",
-    scope: "openid profile email",
-  },
-  session: {
-    absoluteDuration: 24 * 60 * 60, // 24 hours
-  },
-  httpTimeout: 10000, // 10 seconds
-});
+const getAuth0Config = () => {
+  const config = useConfigStore.getState().getAuth0Config();
+  return {
+    domain: config.domain,
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
+    appBaseUrl: config.callbackUrl,
+    routes: {
+      callback: '/auth/callback',
+      login: '/auth/login',
+      logout: '/auth/logout',
+    },
+    authorizationParameters: {
+      response_type: 'code',
+      scope: config.scope,
+      audience: config.audience,
+    },
+    session: {
+      absoluteDuration: 24 * 60 * 60, // 24 hours
+      rolling: true,
+      rollingDuration: 3 * 60 * 60, // 3 hours
+    },
+    httpTimeout: 60000, // 60 seconds
+  };
+};
+
+export const auth0 = new Auth0Client(getAuth0Config());
 
 interface DirectusError {
   message: string;

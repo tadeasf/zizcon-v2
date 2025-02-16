@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import { Auth0Provider } from "@auth0/nextjs-auth0";
 import { auth0 } from "@/lib/auth0";
 import { AuthSync } from "@/components/auth/AuthSync";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,7 @@ export default async function RootLayout({
             <Footer />
           </ThemeProvider>
         </Auth0Provider>
+        <Toaster />
       </body>
     </html>
   );

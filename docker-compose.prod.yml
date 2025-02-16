@@ -59,7 +59,7 @@ services:
       - DIRECTUS_ADMIN_EMAIL=${DIRECTUS_ADMIN_EMAIL}
       - DIRECTUS_ADMIN_PASSWORD=${DIRECTUS_ADMIN_PASSWORD}
       # Internal URL for API routes
-      - DIRECTUS_INTERNAL_URL=http://directus:8055
+      - DIRECTUS_INTERNAL_URL=${DIRECTUS_INTERNAL_URL}
     volumes:
       - .:/app
       - /app/node_modules

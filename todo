@@ -1,0 +1,58 @@
+interface Activity {
+  id?: number | string; // optional id field if needed
+
+  // Basic fields
+  name: string;
+  type: "Deskovka" | "LARP" | "RPG" | "Deskoherna" | "Přednáška" | "Ostatní";
+  start_datetime: Date;
+  end_datetime: Date;
+  max_participants: number;
+  email_leader: string;
+  description: string; // assuming rich text content is stored as a string
+  isOpen: boolean;
+  
+  // Relations
+  participants?: Participant[]; // manyToMany relation with Participant
+  aktualitaDoNotUseNow?: Aktualita; // manyToOne relation with Aktualita
+  
+  // Media
+  profile_photo?: Media; // single media file
+  
+  // Additional fields
+  leader_name: string;
+  detail: string;
+  participants_orgs?: Organizator[]; // manyToMany relation with Organizator for participating orgs
+  leader?: Organizator; // manyToOne relation with Organizator for leader
+
+  // Optionally, if using draftAndPublish you might have publishing metadata:
+  publishedAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+--------------------------------------------------
+
+You would then define or import the related interfaces. For example:
+
+--------------------------------------------------
+  
+interface Participant {
+  id: number | string;
+  // ... add other participant-specific fields
+}
+  
+interface Aktualita {
+  id: number | string;
+  // ... add other aktualita-specific fields
+}
+  
+interface Organizator {
+  id: number | string;
+  // ... add other organizator-specific fields
+}
+  
+interface Media {
+  id: number | string;
+  url: string;
+  // ... add other media-specific fields (e.g., name, formats, etc.)
+}

@@ -17,9 +17,9 @@ const userSyncService = new UserSyncService(auth0ManagementService);
 export async function GET() {
   try {
     const auth0Client = getAuth0Client();
-    const user = await auth0Client.getUser();
+    const session = await auth0Client.getSession();
     
-    if (!user?.email) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No authenticated user found' },
         { status: 401 }
@@ -27,16 +27,16 @@ export async function GET() {
     }
 
     console.log('User:', {
-      email: user.email,
-      hasUser: !!user
+      email: session.user.email,
+      hasUser: !!session.user
     });
 
     // Get full user details including roles
-    const userDetails = await auth0ManagementService.getFullUserDetails(user.email);
+    const userDetails = await auth0ManagementService.getFullUserDetails(session.user.email);
 
     // If we have a Directus user ID in the session, sync the roles
-    if (user.directusUserId) {
-      await userSyncService.syncUserRoles(user.email, user.directusUserId);
+    if (session.user.directusUserId) {
+      await userSyncService.syncUserRoles(session.user.email, session.user.directusUserId);
     }
 
     return NextResponse.json({

@@ -101,7 +101,7 @@ export class UserSyncService {
         });
       }
     } catch (error) {
-      console.error('Error syncing user roles:', error);
+      console.error('Sync Service: Error syncing user roles:', error);
       throw error;
     }
   }

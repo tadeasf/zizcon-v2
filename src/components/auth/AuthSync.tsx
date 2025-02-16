@@ -35,7 +35,7 @@ export function AuthSync() {
           }
         })
         .catch(error => {
-          console.error('Error syncing user:', error);
+          console.error('AuthSync: Error syncing user:', error);
         });
     }
   }, [user, isLoading]); // Only run when user or loading state changes

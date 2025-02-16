@@ -32,8 +32,8 @@ export function ProfileClient({ session }: ProfileClientProps) {
       const data = await response.json();
       setSyncDetails(JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error('Error syncing roles:', error);
-      setSyncDetails('Error syncing roles. Check console for errors.');
+      console.error('Sync Client: Error syncing roles:', error);
+      setSyncDetails('Sync Client: Error syncing roles. Check console for errors.');
     }
   };
 

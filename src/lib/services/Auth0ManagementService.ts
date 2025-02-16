@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { ApiTrackingService, ApiSource } from './ApiTrackingService';
-import { useAuthStore } from '../../stores/authStore';
 
-interface Auth0Role {
+export interface Auth0Role {
   id: string;
   name: string;
   description?: string;
@@ -159,23 +158,10 @@ export class Auth0ManagementService {
     auth0Roles: Auth0Role[];
     directusRoleId: string | null;
   }> {
-    const authStore = useAuthStore.getState();
-    
-    // Check if we should skip the sync
-    if (!authStore.shouldSync()) {
-      console.log('Auth0: Skipping user details fetch - using cached data');
-      return {
-        auth0User: null,
-        auth0Roles: [],
-        directusRoleId: DIRECTUS_ROLES.regular
-      };
-    }
-
     try {
       const auth0User = await this.getUserByEmail(email);
       if (!auth0User) {
         console.log('Auth0: No user found for email:', email);
-        authStore.setSyncError('User not found in Auth0');
         return { auth0User: null, auth0Roles: [], directusRoleId: null };
       }
 
@@ -192,8 +178,6 @@ export class Auth0ManagementService {
       
       if (auth0Roles.length === 0) {
         console.log('Auth0: User has no roles assigned, defaulting to regular role');
-        authStore.setSynced(true);
-        authStore.setLastSyncTimestamp(Date.now());
         return {
           auth0User,
           auth0Roles: [],
@@ -223,11 +207,6 @@ export class Auth0ManagementService {
         ? this.getDirectusRoleForAuth0Role(highestPriorityRole)
         : DIRECTUS_ROLES.regular;
 
-      // Update auth store
-      authStore.setSynced(true);
-      authStore.setLastSyncTimestamp(Date.now());
-      authStore.setSyncError(null);
-
       return {
         auth0User,
         auth0Roles,
@@ -235,7 +214,6 @@ export class Auth0ManagementService {
       };
     } catch (error) {
       console.error('Error getting full user details:', error);
-      authStore.setSyncError(error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }

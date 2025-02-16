@@ -1,0 +1,196 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Import Secrets from Vault
+        id: secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          secrets: |
+            kv/data/zizcon-v2-nextjs/config AUTH0_DOMAIN;
+            kv/data/zizcon-v2-nextjs/config AUTH0_ISSUER_BASE_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_SCOPE;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_ID;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_SECRET;
+            kv/data/zizcon-v2-nextjs/config AUTH0_AUDIENCE;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_APP_URL;
+            kv/data/zizcon-v2-nextjs/config APP_BASE_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CALLBACK_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_POST_LOGOUT_REDIRECT_URI;
+            kv/data/zizcon-v2-nextjs/config AUTH0_SECRET;
+            kv/data/zizcon-v2-nextjs/config AUTH0_MGMT_IDENTIFIER;
+            kv/data/zizcon-v2-nextjs/config ADMIN_EMAIL;
+            kv/data/zizcon-v2-nextjs/config ADMIN_PASSWORD;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_EMAIL;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_PASSWORD;
+            kv/data/zizcon-v2-nextjs/config KEY;
+            kv/data/zizcon-v2-nextjs/config SECRET;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_STATIC_TOKEN;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_URL;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_TOKEN;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_INTERNAL_URL
+
+      - name: Deploy to VPS
+        id: deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: ${{ steps.secrets.outputs.* }}
+          script: |
+            cd /root/zizcon-v2
+            
+            # Create temporary .env file for deployment
+            echo "# Auth0 Configuration
+            AUTH0_DOMAIN=${{ steps.secrets.outputs.AUTH0_DOMAIN }}
+            AUTH0_ISSUER_BASE_URL=${{ steps.secrets.outputs.AUTH0_ISSUER_BASE_URL }}
+            AUTH0_SCOPE=${{ steps.secrets.outputs.AUTH0_SCOPE }}
+            AUTH0_CLIENT_ID=${{ steps.secrets.outputs.AUTH0_CLIENT_ID }}
+            AUTH0_CLIENT_SECRET=${{ steps.secrets.outputs.AUTH0_CLIENT_SECRET }}
+            AUTH0_AUDIENCE=${{ steps.secrets.outputs.AUTH0_AUDIENCE }}
+
+            # Application URLs
+            NEXT_PUBLIC_APP_URL=${{ steps.secrets.outputs.NEXT_PUBLIC_APP_URL }}
+            APP_BASE_URL=${{ steps.secrets.outputs.APP_BASE_URL }}
+            AUTH0_CALLBACK_URL=${{ steps.secrets.outputs.AUTH0_CALLBACK_URL }}
+            AUTH0_POST_LOGOUT_REDIRECT_URI=${{ steps.secrets.outputs.AUTH0_POST_LOGOUT_REDIRECT_URI }}
+            AUTH0_SECRET=${{ steps.secrets.outputs.AUTH0_SECRET }}
+
+            # Directus Configuration
+            ADMIN_EMAIL=${{ steps.secrets.outputs.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ steps.secrets.outputs.ADMIN_PASSWORD }}
+            DIRECTUS_ADMIN_EMAIL=${{ steps.secrets.outputs.DIRECTUS_ADMIN_EMAIL }}
+            DIRECTUS_ADMIN_PASSWORD=${{ steps.secrets.outputs.DIRECTUS_ADMIN_PASSWORD }}
+
+            # Security
+            KEY=${{ steps.secrets.outputs.KEY }}
+            SECRET=${{ steps.secrets.outputs.SECRET }}
+            DIRECTUS_STATIC_TOKEN=${{ steps.secrets.outputs.DIRECTUS_STATIC_TOKEN }}
+
+            # Directus URLs
+            NEXT_PUBLIC_DIRECTUS_URL=${{ steps.secrets.outputs.NEXT_PUBLIC_DIRECTUS_URL }}
+            NEXT_PUBLIC_DIRECTUS_TOKEN=${{ steps.secrets.outputs.DIRECTUS_STATIC_TOKEN }}
+            AUTH0_MGMT_IDENTIFIER=${{ steps.secrets.outputs.AUTH0_MGMT_IDENTIFIER }}
+            DIRECTUS_INTERNAL_URL=${{ steps.secrets.outputs.DIRECTUS_INTERNAL_URL }}" > .env
+            
+            # Create logs directory
+            mkdir -p deployment_logs
+            
+            # Pull latest changes and log output
+            git pull origin main 2>&1 | tee deployment_logs/git_pull.log
+            
+            # Capture existing containers logs before shutdown
+            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/pre_deploy_containers.log 2>&1
+            
+            # Rebuild and restart containers with logging
+            docker-compose -f docker-compose.prod.yml down 2>&1 | tee deployment_logs/docker_compose_down.log
+            docker-compose -f docker-compose.prod.yml up -d --build 2>&1 | tee deployment_logs/docker_compose_up.log
+            
+            # Capture new containers logs
+            sleep 30  # Wait for containers to initialize
+            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/post_deploy_containers.log 2>&1
+            
+            # Create deployment summary
+            echo "Deployment completed at $(date)" > deployment_logs/deployment_summary.log
+            echo "Git Status:" >> deployment_logs/deployment_summary.log
+            git status >> deployment_logs/deployment_summary.log
+            echo "Docker Containers Status:" >> deployment_logs/deployment_summary.log
+            docker-compose -f docker-compose.prod.yml ps >> deployment_logs/deployment_summary.log
+            
+            # Archive logs
+            tar -czf deployment_logs.tar.gz deployment_logs/
+            
+            # Clean up
+            rm -rf deployment_logs
+            rm .env
+
+      - name: Download deployment logs
+        if: always()
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "/root/zizcon-v2/deployment_logs.tar.gz"
+          target: "deployment_logs"
+          strip_components: 2
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-logs
+          path: deployment_logs.tar.gz
+          retention-days: 5
+
+      - name: Send deployment notification
+        if: always()
+        uses: dawidd6/action-send-mail@v4
+        with:
+          # SMTP Configuration
+          server_address: mail.tadeasfort.com
+          server_port: 587
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          secure: false  # For port 587, we use STARTTLS
+          
+          # Required fields
+          subject: "[${{ job.status }}] Zizcon V2 Deployment - ${{ github.ref_name }}"
+          to: ${{ secrets.NOTIFICATION_EMAILS }}
+          from: "Zizcon V2 Deployment <zizcon@tadeasfort.com>"
+          
+          # Optional fields
+          reply_to: zizcon@tadeasfort.com
+          convert_markdown: true
+          
+          # Email Body
+          body: |
+            # Deployment Status Report
+            
+            ## Overview
+            - **Status**: ${{ job.status }}
+            - **Branch**: ${{ github.ref_name }}
+            - **Commit**: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            - **Triggered by**: ${{ github.actor }}
+            
+            ## Details
+            - **Repository**: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+            - **Workflow**: [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ## Logs
+            Detailed deployment logs are attached to this email. The logs include:
+            - Git pull operations
+            - Pre-deployment container state
+            - Docker compose operations
+            - Post-deployment container state
+            - Deployment summary
+            
+            ## Links
+            - [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - [View Commit Details](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            
+            ---
+            *This is an automated message from GitHub Actions*
+          
+          # Attachments
+          attachments: ./deployment_logs.tar.gz
+          
+          # Optional settings
+          priority: ${{ job.status == 'success' && 'normal' || 'high' }}
+          ignore_cert: true
+          nodemailerlog: true

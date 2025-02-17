@@ -50,7 +50,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: ${{ steps.secrets.outputs.* }}
           script: |
             cd /root/zizcon-v2
             
@@ -87,62 +86,28 @@ jobs:
             AUTH0_MGMT_IDENTIFIER=${{ steps.secrets.outputs.AUTH0_MGMT_IDENTIFIER }}
             DIRECTUS_INTERNAL_URL=${{ steps.secrets.outputs.DIRECTUS_INTERNAL_URL }}" > .env
             
-            # Create logs directory
-            mkdir -p deployment_logs
+            # Pull latest changes
+            git pull origin main
             
-            # Pull latest changes and log output
-            git pull origin main 2>&1 | tee deployment_logs/git_pull.log
-            
-            # Capture existing containers logs before shutdown
-            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/pre_deploy_containers.log 2>&1 || true
-            
-            # Rebuild and restart containers with logging
-            docker-compose -f docker-compose.prod.yml down 2>&1 | tee deployment_logs/docker_compose_down.log
-            docker-compose -f docker-compose.prod.yml up -d --build 2>&1 | tee deployment_logs/docker_compose_up.log
-            
-            # Capture new containers logs
-            sleep 30  # Wait for containers to initialize
-            docker-compose -f docker-compose.prod.yml logs --tail=1000 > deployment_logs/post_deploy_containers.log 2>&1 || true
-            
-            # Create deployment summary
-            echo "Deployment completed at $(date)" > deployment_logs/deployment_summary.log
-            echo "Git Status:" >> deployment_logs/deployment_summary.log
-            git status >> deployment_logs/deployment_summary.log
-            echo "Docker Containers Status:" >> deployment_logs/deployment_summary.log
-            docker-compose -f docker-compose.prod.yml ps >> deployment_logs/deployment_summary.log
-            
-            # Archive logs with absolute path
-            cd /root/zizcon-v2
-            tar -czf deployment_logs.tar.gz deployment_logs/
-            
-            # Upload to x0.at and save URL
-            echo "Uploading logs to x0.at..."
-            UPLOAD_URL=$(curl -F "file=@deployment_logs.tar.gz" https://x0.at/)
-            echo "Logs uploaded successfully. URL: $UPLOAD_URL"
-            echo "::set-output name=upload_url::$UPLOAD_URL"
+            # Rebuild and restart containers
+            docker-compose -f docker-compose.prod.yml down
+            docker-compose -f docker-compose.prod.yml up -d --build
             
             # Clean up
-            rm -rf deployment_logs
-            rm -f deployment_logs.tar.gz
             rm .env
 
       - name: Send deployment notification
         if: always()
         uses: dawidd6/action-send-mail@v4
         with:
-          # SMTP Configuration
           server_address: mail.tadeasfort.com
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           secure: false  # For port 587, we use STARTTLS
-          
-          # Required fields
           subject: "[${{ job.status }}] Zizcon V2 Deployment - ${{ github.ref_name }}"
           to: ${{ secrets.NOTIFICATION_EMAILS }}
           from: "Zizcon V2 Deployment <noreply@tadeasfort.com>"
-          
-          # Optional fields
           reply_to: noreply@tadeasfort.com
           convert_markdown: true
           html_body: |
@@ -162,18 +127,6 @@ jobs:
               <li><strong>Workflow</strong>: <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">${{ github.workflow }}</a></li>
             </ul>
             
-            <h2>Logs</h2>
-            <p>Deployment logs are available for download at: <a href="${{ steps.deploy.outputs.upload_url }}">${{ steps.deploy.outputs.upload_url }}</a></p>
-            <p>Note: Logs will be available for at least 3 days, depending on file size.</p>
-            <p>The logs include:</p>
-            <ul>
-              <li>Git pull operations</li>
-              <li>Pre-deployment container state</li>
-              <li>Docker compose operations</li>
-              <li>Post-deployment container state</li>
-              <li>Deployment summary</li>
-            </ul>
-            
             <h2>Links</h2>
             <ul>
               <li><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Workflow Run</a></li>
@@ -183,6 +136,5 @@ jobs:
             <hr>
             <em>This is an automated message from GitHub Actions</em>
           
-          # Optional settings
           priority: ${{ job.status == 'success' && 'normal' || 'high' }}
           ignore_cert: true

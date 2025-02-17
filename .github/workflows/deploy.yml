@@ -18,7 +18,7 @@ jobs:
         with:
           url: ${{ secrets.VAULT_ADDR }}
           token: ${{ secrets.VAULT_TOKEN }}
-          secrets: |
+          secrets: >-
             kv/data/zizcon-v2-nextjs/config AUTH0_DOMAIN;
             kv/data/zizcon-v2-nextjs/config AUTH0_ISSUER_BASE_URL;
             kv/data/zizcon-v2-nextjs/config AUTH0_SCOPE;
@@ -119,7 +119,7 @@ jobs:
             echo "Uploading logs to x0.at..."
             UPLOAD_URL=$(curl -F "file=@deployment_logs.tar.gz" https://x0.at/)
             echo "Logs uploaded successfully. URL: $UPLOAD_URL"
-            echo "UPLOAD_URL=$UPLOAD_URL" >> $GITHUB_ENV
+            echo "upload_url=$UPLOAD_URL" >> "$GITHUB_OUTPUT"
             
             # Clean up
             rm -rf deployment_logs
@@ -163,7 +163,7 @@ jobs:
             </ul>
             
             <h2>Logs</h2>
-            <p>Deployment logs are available for download at: <a href="${{ env.UPLOAD_URL }}">${{ env.UPLOAD_URL }}</a></p>
+            <p>Deployment logs are available for download at: <a href="${{ steps.deploy.outputs.upload_url }}">${{ steps.deploy.outputs.upload_url }}</a></p>
             <p>Note: Logs will be available for at least 3 days, depending on file size.</p>
             <p>The logs include:</p>
             <ul>

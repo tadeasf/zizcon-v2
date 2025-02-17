@@ -18,27 +18,109 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useUser } from '@auth0/nextjs-auth0';
+import type { Auth0Role } from '@/lib/services/Auth0ManagementService';
+import { useUserSyncStore } from '@/lib/stores/userSyncStore';
+import { useToast } from '@/hooks/use-toast';
+
+interface SyncResponse {
+  isNew?: boolean;
+  userId?: string | null;
+  auth0Roles?: Auth0Role[];
+  directusRoleId?: string | null;
+  error?: string;
+  details?: string;
+}
+
+interface SyncState {
+  isLoading: boolean;
+  error: string | null;
+  lastSynced: number | null;
+}
 
 export function AuthSync() {
-  const { user, isLoading } = useUser();
+  const { user, error: auth0Error, isLoading: auth0Loading } = useUser();
+  const [syncState, setSyncState] = useState<SyncState>({
+    isLoading: false,
+    error: null,
+    lastSynced: null
+  });
+  const { shouldSync, setLastSyncTime } = useUserSyncStore();
+  const { toast } = useToast();
+
+  const handleSyncError = useCallback((error: string) => {
+    if (syncState.error !== error) {
+      toast({
+        title: "Sync Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [toast, syncState.error]);
 
   useEffect(() => {
-    // Only try to sync if we have a user and they have an email
-    if (!isLoading && user?.email) {
-      fetch('/api/auth/sync')
-        .then(response => response.json())
-        .then(data => {
-          if (data.isNew) {
-          } else if (data.userId) {
-          }
-        })
-        .catch(error => {
-          console.error('AuthSync: Error syncing user:', error);
-        });
-    }
-  }, [user, isLoading]); // Only run when user or loading state changes
+    const performSync = async () => {
+      if (!user?.email || auth0Loading || auth0Error) return;
 
+      // Check if we need to sync based on the user's Directus ID
+      const directusUserId = user.directusUserId as string | undefined;
+      if (directusUserId && !shouldSync(directusUserId)) {
+        console.log('Skipping sync - within cache period:', {
+          email: user.email,
+          directusUserId
+        });
+        return;
+      }
+
+      setSyncState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+        const response = await fetch('/api/auth/sync');
+        const data: SyncResponse = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        if (data.userId) {
+          setLastSyncTime(data.userId);
+          setSyncState(prev => ({
+            ...prev,
+            lastSynced: Date.now(),
+            error: null
+          }));
+
+          // Show success toast for new users
+          if (data.isNew) {
+            toast({
+              title: "Account Created",
+              description: "Your account has been successfully set up.",
+            });
+          }
+
+          console.log('User synced successfully:', {
+            isNew: data.isNew,
+            hasUserId: !!data.userId,
+            roles: data.auth0Roles?.map(r => r.name)
+          });
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error during sync';
+        console.error('Sync error:', errorMessage);
+        setSyncState(prev => ({
+          ...prev,
+          error: errorMessage
+        }));
+        handleSyncError(errorMessage);
+      } finally {
+        setSyncState(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    performSync();
+  }, [user, auth0Loading, auth0Error, shouldSync, setLastSyncTime, handleSyncError, toast]);
+
+  // Don't render anything - this is a background process
   return null;
 } 

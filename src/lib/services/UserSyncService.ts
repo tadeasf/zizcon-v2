@@ -2,6 +2,7 @@ import { Auth0ManagementService } from './Auth0ManagementService';
 import { directus } from '../directus';
 import { updateUser, readUsers } from '@directus/sdk';
 import { ApiTrackingService, ApiSource } from './ApiTrackingService';
+import { useUserSyncStore } from '../stores/userSyncStore';
 
 export class UserSyncService {
   private apiTracker: ApiTrackingService | null = null;
@@ -20,6 +21,16 @@ export class UserSyncService {
 
   async syncUserRoles(email: string, directusUserId: string): Promise<void> {
     try {
+      // Check if sync is needed based on cache
+      const syncStore = useUserSyncStore.getState();
+      if (!syncStore.shouldSync(directusUserId)) {
+        console.log('Skipping role sync - within cache period:', {
+          userId: directusUserId,
+          email
+        });
+        return;
+      }
+
       // Get current Directus user details
       await this.trackApiCall();
       const currentDirectusUser = await directus.request(
@@ -100,6 +111,9 @@ export class UserSyncService {
           isDefaultRole: auth0Roles.length === 0
         });
       }
+
+      // Update the sync timestamp
+      syncStore.setLastSyncTime(directusUserId);
     } catch (error) {
       console.error('Sync Service: Error syncing user roles:', error);
       throw error;

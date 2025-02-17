@@ -18,7 +18,29 @@ jobs:
         with:
           url: ${{ secrets.VAULT_ADDR }}
           token: ${{ secrets.VAULT_TOKEN }}
-          secrets: kv/data/zizcon-v2-nextjs/config AUTH0_DOMAIN;kv/data/zizcon-v2-nextjs/config AUTH0_ISSUER_BASE_URL;kv/data/zizcon-v2-nextjs/config AUTH0_SCOPE;kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_ID;kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_SECRET;kv/data/zizcon-v2-nextjs/config AUTH0_AUDIENCE;kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_APP_URL;kv/data/zizcon-v2-nextjs/config APP_BASE_URL;kv/data/zizcon-v2-nextjs/config AUTH0_CALLBACK_URL;kv/data/zizcon-v2-nextjs/config AUTH0_POST_LOGOUT_REDIRECT_URI;kv/data/zizcon-v2-nextjs/config AUTH0_SECRET;kv/data/zizcon-v2-nextjs/config AUTH0_MGMT_IDENTIFIER;kv/data/zizcon-v2-nextjs/config ADMIN_EMAIL;kv/data/zizcon-v2-nextjs/config ADMIN_PASSWORD;kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_EMAIL;kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_PASSWORD;kv/data/zizcon-v2-nextjs/config KEY;kv/data/zizcon-v2-nextjs/config SECRET;kv/data/zizcon-v2-nextjs/config DIRECTUS_STATIC_TOKEN;kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_URL;kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_TOKEN;kv/data/zizcon-v2-nextjs/config DIRECTUS_INTERNAL_URL;
+          secrets: |
+            kv/data/zizcon-v2-nextjs/config AUTH0_DOMAIN;
+            kv/data/zizcon-v2-nextjs/config AUTH0_ISSUER_BASE_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_SCOPE;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_ID;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CLIENT_SECRET;
+            kv/data/zizcon-v2-nextjs/config AUTH0_AUDIENCE;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_APP_URL;
+            kv/data/zizcon-v2-nextjs/config APP_BASE_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_CALLBACK_URL;
+            kv/data/zizcon-v2-nextjs/config AUTH0_POST_LOGOUT_REDIRECT_URI;
+            kv/data/zizcon-v2-nextjs/config AUTH0_SECRET;
+            kv/data/zizcon-v2-nextjs/config AUTH0_MGMT_IDENTIFIER;
+            kv/data/zizcon-v2-nextjs/config ADMIN_EMAIL;
+            kv/data/zizcon-v2-nextjs/config ADMIN_PASSWORD;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_EMAIL;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_ADMIN_PASSWORD;
+            kv/data/zizcon-v2-nextjs/config KEY;
+            kv/data/zizcon-v2-nextjs/config SECRET;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_STATIC_TOKEN;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_URL;
+            kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_TOKEN;
+            kv/data/zizcon-v2-nextjs/config DIRECTUS_INTERNAL_URL
 
       - name: Deploy to VPS
         id: deploy

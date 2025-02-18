@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface UserSyncState {
   lastSyncTime: Record<string, number>;
@@ -8,6 +8,8 @@ interface UserSyncState {
 }
 
 const SYNC_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
+
+const isServer = typeof window === 'undefined';
 
 export const useUserSyncStore = create<UserSyncState>()(
   persist(
@@ -28,7 +30,13 @@ export const useUserSyncStore = create<UserSyncState>()(
     }),
     {
       name: 'user-sync-storage',
-      // Only persist the lastSyncTime
+      storage: isServer
+        ? createJSONStorage(() => ({
+            getItem: () => null,
+            setItem: () => null,
+            removeItem: () => null,
+          }))
+        : undefined,
       partialize: (state) => ({ lastSyncTime: state.lastSyncTime })
     }
   )

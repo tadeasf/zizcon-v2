@@ -36,6 +36,22 @@ const ACTIONS_CONFIG: ActionConfig[] = [
 
 async function deployActions() {
   try {
+    // Validate required environment variables
+    const requiredEnvVars = {
+      AUTH0_DOMAIN: process.env.AUTH0_DOMAIN,
+      AUTH0_CLIENT_ID: process.env.AUTH0_CLIENT_ID,
+      AUTH0_CLIENT_SECRET: process.env.AUTH0_CLIENT_SECRET,
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
+    };
+
+    const missingEnvVars = Object.entries(requiredEnvVars)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingEnvVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    }
+
     // Initialize Auth0 Management API client with our extended type
     const managementClientOptions: ManagementClientOptionsWithClientCredentials = {
       domain: process.env.AUTH0_DOMAIN!,

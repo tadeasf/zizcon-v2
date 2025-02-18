@@ -9,6 +9,7 @@ interface SyncResponse {
   userId?: string | null;
   auth0Roles?: Auth0Role[];
   directusRoleId?: string | null;
+  stripeCustomerId?: string | null;
   error?: string;
   details?: string;
 }
@@ -27,6 +28,7 @@ export function AuthSync() {
             console.log('User synced:', {
               isNew: data.isNew,
               hasUserId: !!data.userId,
+              hasStripeId: !!data.stripeCustomerId,
               roles: data.auth0Roles?.map(r => r.name)
             });
           }

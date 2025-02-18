@@ -8,7 +8,8 @@ export enum ApiSource {
   NEXTJS_API = 'NEXTJS_API',
   AUTH0_SDK = 'AUTH0_SDK',
   AUTH0_MGMT_API = 'AUTH0_MGMT_API',
-  DIRECTUS_SDK = 'DIRECTUS_SDK'
+  DIRECTUS_SDK = 'DIRECTUS_SDK',
+  STRIPE_API = 'STRIPE_API'
 }
 
 export class ApiTrackingService {

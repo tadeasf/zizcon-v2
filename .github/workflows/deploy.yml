@@ -42,6 +42,7 @@ jobs:
             kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_URL;
             kv/data/zizcon-v2-nextjs/config NEXT_PUBLIC_DIRECTUS_TOKEN;
             kv/data/zizcon-v2-nextjs/config DIRECTUS_INTERNAL_URL;
+            kv/data/zizcon-v2-nextjs/config STRIPE_SECRET_KEY;
 
       - name: Deploy to VPS
         id: deploy

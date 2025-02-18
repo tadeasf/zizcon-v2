@@ -10,6 +10,7 @@
  * 2. Uses syncUserWithDirectus to:
  *    - Check if user exists in Directus
  *    - Create new user if needed
+ *    - Sync Stripe customer ID from Auth0 metadata
  * 3. Uses UserSyncService to:
  *    - Sync roles between Auth0 and Directus
  * 4. Returns the sync result with user ID and sync status
@@ -55,7 +56,7 @@ export async function GET() {
       );
     }
 
-    // First ensure user exists in Directus
+    // First ensure user exists in Directus and sync Stripe customer ID
     const result = await syncUserWithDirectus(session);
     
     if (!result.userId) {
@@ -74,7 +75,8 @@ export async function GET() {
     return NextResponse.json({
       ...result,
       auth0Roles: userDetails.auth0Roles,
-      directusRoleId: userDetails.directusRoleId
+      directusRoleId: userDetails.directusRoleId,
+      stripeCustomerId: session.user.app_metadata?.stripe_customer_id
     });
   } catch (error) {
     console.error("Error in sync endpoint:", error);

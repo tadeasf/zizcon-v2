@@ -21,8 +21,9 @@
 
 import { Auth0Client } from '@auth0/nextjs-auth0/server';
 import { directus } from './directus';
-import { createUser, readUsers } from '@directus/sdk';
+import { createUser, readUsers, updateUser } from '@directus/sdk';
 import type { SessionData as Session } from '@auth0/nextjs-auth0/types';
+import type { DirectusUser } from '../types/directus';
 
 const getAuth0Config = () => {
   return {
@@ -75,7 +76,11 @@ interface DirectusError {
  * 3. If not found, creates new Directus user with Auth0 data
  * 4. Handles errors and provides detailed logging
  */
-export async function syncUserWithDirectus(session: Session | null): Promise<{ userId: string | null; isNew: boolean }> {
+export async function syncUserWithDirectus(session: Session | null): Promise<{ 
+  userId: string | null; 
+  isNew: boolean;
+  stripeCustomerId?: string | null;
+}> {
   if (!session?.user?.email) {
     console.log('No email in session');
     return { userId: null, isNew: false };
@@ -85,42 +90,57 @@ export async function syncUserWithDirectus(session: Session | null): Promise<{ u
     // Set the static token for authentication
     directus.setToken(process.env.DIRECTUS_STATIC_TOKEN!);
 
-    // Check if user already exists
-    const existingUsers = await directus.request(
+    // Get Stripe customer ID from Auth0 metadata
+    const stripeCustomerId = session.user.app_metadata?.stripe_customer_id;
+
+    // Check if user already exists in Directus
+    const existingUsers = await directus.request<DirectusUser[]>(
       readUsers({
         filter: { email: { _eq: session.user.email } },
         fields: ['id', 'role']
       })
     );
 
+    // If user exists, return their ID
     if (existingUsers && existingUsers.length > 0) {
       return {
         userId: existingUsers[0].id,
-        isNew: false
+        isNew: false,
+        stripeCustomerId
       };
     }
 
-    // Create new user with minimal required fields
-    const newUser = await directus.request(
+    // For new users, create Directus user
+    const newUser = await directus.request<DirectusUser>(
       createUser({
         email: session.user.email,
-        password: crypto.randomUUID(), // Random password since we're using Auth0
+        password: crypto.randomUUID(),
         role: "ecd5f898-308d-4cb2-b6e2-f15b6c0d6089", // regular role ID
         status: "active",
         provider: "auth0",
         external_identifier: session.user.sub,
         first_name: session.user.given_name || "",
-        last_name: session.user.family_name || "",
-      })
+        last_name: session.user.family_name || ""
+      } as Partial<DirectusUser>)
     );
+
+    // Update the user with Stripe customer ID if available
+    if (stripeCustomerId && newUser?.id) {
+      await directus.request(
+        updateUser(newUser.id, {
+          stripe_customer_id: stripeCustomerId
+        } as Partial<DirectusUser>)
+      );
+    }
 
     return {
       userId: newUser?.id || null,
-      isNew: true
+      isNew: true,
+      stripeCustomerId
     };
   } catch (error) {
     const directusError = error as DirectusError;
-    console.error("Directus error details:", {
+    console.error("Sync error details:", {
       message: directusError.message,
       errors: directusError.errors,
       response: directusError.response?.data,
@@ -134,7 +154,7 @@ export async function syncUserWithDirectus(session: Session | null): Promise<{ u
  * Handles the Auth0 callback after successful authentication
  * 
  * @param session - The Auth0 session data
- * @returns Updated session with Directus user ID
+ * @returns Updated session with Directus user ID and Stripe customer ID
  * 
  * This function:
  * 1. Syncs the authenticated user with Directus
@@ -143,15 +163,17 @@ export async function syncUserWithDirectus(session: Session | null): Promise<{ u
  */
 export const handleAuth0AfterCallback = async (session: Session): Promise<Session> => {
   try {
-    const { userId } = await syncUserWithDirectus(session);
+    const { userId, stripeCustomerId } = await syncUserWithDirectus(session);
     
     if (userId) {
       return {
         ...session,
         directusUserId: userId,
+        stripeCustomerId,
         user: {
           ...session.user,
           directusUserId: userId,
+          stripeCustomerId
         }
       };
     }

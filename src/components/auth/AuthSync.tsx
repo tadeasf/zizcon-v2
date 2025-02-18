@@ -29,6 +29,7 @@ interface SyncResponse {
   userId?: string | null;
   auth0Roles?: Auth0Role[];
   directusRoleId?: string | null;
+  stripeCustomerId?: string | null;
   error?: string;
   details?: string;
 }
@@ -68,7 +69,8 @@ export function AuthSync() {
       if (directusUserId && !shouldSync(directusUserId)) {
         console.log('Skipping sync - within cache period:', {
           email: user.email,
-          directusUserId
+          directusUserId,
+          stripeCustomerId: user.app_metadata?.stripe_customer_id
         });
         return;
       }
@@ -102,6 +104,7 @@ export function AuthSync() {
           console.log('User synced successfully:', {
             isNew: data.isNew,
             hasUserId: !!data.userId,
+            hasStripeId: !!data.stripeCustomerId,
             roles: data.auth0Roles?.map(r => r.name)
           });
         }

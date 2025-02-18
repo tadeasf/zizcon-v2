@@ -85,14 +85,14 @@ export interface Auth0TriggerBinding {
   id?: string;
   trigger_id?: string;
   display_name: string;
-  action?: {
-    id: string;
-    name: string;
-  };
-  ref?: {
-    type: string;
+  ref: {
+    type: 'action_name' | 'action_id';
     value: string;
   };
+  secrets?: Array<{
+    name: string;
+    value: string;
+  }>;
 }
 
 export interface Auth0ActionClient extends ManagementClient {

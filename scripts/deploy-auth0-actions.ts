@@ -1,7 +1,7 @@
 import { ManagementClient, ManagementClientOptionsWithClientCredentials } from 'auth0';
 import fs from 'fs/promises';
 import path from 'path';
-import { Auth0ActionClient } from '../src/types/auth0';
+import { Auth0ActionClient, Auth0TriggerBinding } from '../src/types/auth0';
 
 interface ActionConfig {
   name: string;
@@ -101,10 +101,15 @@ async function deployActions() {
                   name,
                   version
                 })),
-                secrets: actionConfig.secrets ? Object.entries(actionConfig.secrets).map(([name, value]) => ({
-                  name,
-                  value
-                })) : undefined
+                secrets: actionConfig.secrets ? Object.entries(actionConfig.secrets).map(([name, value]) => {
+                  if (!value) {
+                    throw new Error(`Secret ${name} is required but not provided`);
+                  }
+                  return {
+                    name,
+                    value
+                  };
+                }) : undefined
               }
             );
             console.log(`Successfully updated action: ${action.name}`);
@@ -160,9 +165,21 @@ async function deployActions() {
           const triggerBindings = await auth0.actions.getTriggerBindings({ triggerId: 'post-login' });
           console.log('Current trigger bindings:', triggerBindings.data.bindings);
 
+          // Map existing bindings to ensure they match our type structure
+          const existingBindings = triggerBindings.data.bindings.map(binding => {
+            const bindingWithRef = {
+              ...binding,
+              ref: {
+                type: 'action_name' as const,
+                value: binding.action?.name || ''
+              }
+            };
+            return bindingWithRef;
+          }) as Auth0TriggerBinding[];
+
           // Check if action is already bound
-          const isActionBound = triggerBindings.data.bindings.some(
-            (binding) => binding.ref?.type === 'action_name' && binding.ref?.value === actionConfig.name
+          const isActionBound = existingBindings.some(
+            (binding) => binding.ref.type === 'action_name' && binding.ref.value === actionConfig.name
           );
 
           if (!isActionBound) {
@@ -172,7 +189,7 @@ async function deployActions() {
               { triggerId: 'post-login' },
               {
                 bindings: [
-                  ...triggerBindings.data.bindings,
+                  ...existingBindings,
                   {
                     ref: {
                       type: 'action_name',
